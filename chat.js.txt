@@ -1,0 +1,78 @@
+(function () {
+
+  const API_URL = "https://comunica-cmbe-project.onrender.com/chat";
+
+  function iniciar() {
+
+    const btn = document.createElement("div");
+    btn.innerHTML = "💬 Atendimento";
+    btn.style = "position:fixed;bottom:20px;right:20px;background:#1a73e8;color:#fff;padding:10px 15px;border-radius:30px;cursor:pointer;z-index:99999;";
+    document.body.appendChild(btn);
+
+    const box = document.createElement("div");
+    box.style = "display:none;position:fixed;bottom:70px;right:20px;width:320px;height:450px;background:#fff;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.3);z-index:99999;font-family:Arial;";
+    box.innerHTML = `
+      <div style="background:#1a73e8;color:#fff;padding:10px;">Assistente da Câmara</div>
+      <div id="msgs" style="height:300px;overflow:auto;padding:10px;"></div>
+      <div style="display:flex;">
+        <input id="input" style="flex:1;padding:10px;border:none;" placeholder="Digite..." />
+        <button id="send" style="padding:10px;">➤</button>
+      </div>
+    `;
+    document.body.appendChild(box);
+
+    btn.onclick = () => {
+      box.style.display = box.style.display === "block" ? "none" : "block";
+    };
+
+    document.getElementById("send").onclick = send;
+    document.getElementById("input").addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        e.preventDefault();
+        send();
+      }
+    });
+
+    async function send() {
+      const input = document.getElementById("input");
+      const text = input.value;
+      if (!text) return;
+
+      add(text, "user");
+      input.value = "";
+
+      const loading = add("Digitando...", "bot");
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({message: text})
+        });
+
+        const data = await res.json();
+        loading.remove();
+        add(data.reply || "Erro", "bot");
+
+      } catch (e) {
+        loading.remove();
+        add("Erro de conexão", "bot");
+      }
+    }
+
+    function add(text, type){
+      const div = document.createElement("div");
+      div.style = "margin:5px;padding:6px;border-radius:6px;background:" + (type==="user"?"#1a73e8;color:#fff":"#eee");
+      div.innerText = text;
+      document.getElementById("msgs").appendChild(div);
+    }
+
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", iniciar);
+  } else {
+    iniciar();
+  }
+
+})();
